@@ -1,12 +1,18 @@
 const socket = io();
 
+const set = document.getElementById("set");
+const nickNameForm = set.querySelector("#nickName");  
+
 const welcome = document.getElementById("welcome");
-const form = welcome.querySelector("form");
+const roomNameForm = welcome.querySelector("#roomName");
+
 const room = document.getElementById("room");
 
 room.hidden = true;
+welcome.hidden = true;
 
 let roomName;
+let nickName;
 
 function addMessage(message){
     const ul = room.querySelector("ul");
@@ -25,43 +31,53 @@ function handleMessageSubmit(event){
     input.value = "";
 }
 
+function showWelcome(){
+    set.hidden = true;
+    welcome.hidden = false;
+    room.hidden = true;
+    const h3 = welcome.querySelector("h3");
+    h3.innerText = `Hello, ${nickName}!`;
+    roomNameForm.addEventListener("submit", handleRoomSubmit);
+}
+
 function handleNicknameSubmit(event){
     event.preventDefault();
-    const input = room.querySelector("#name input");
-    socket.emit("nickname", input.value);
+    const input = set.querySelector("#nickName input");
+    socket.emit("nickname", input.value, showWelcome);
+    nickName = input.value;
+    input.value = "";
 }
 
 function showRoom(){
+    set.hidden = true;
     welcome.hidden = true;
     room.hidden = false;
     const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName}`;
+    h3.innerText = `Room #${roomName}`;
     const msgForm = room.querySelector("#msg");
-    const nameForm = room.querySelector("#name");    
     msgForm.addEventListener("submit", handleMessageSubmit);
-    nameForm.addEventListener("submit", handleNicknameSubmit);    
 }
 
 function handleRoomSubmit(event) {
     event.preventDefault();
-    const input = form.querySelector("input");
+    const input = roomNameForm.querySelector("input");
     socket.emit("enter_room", input.value, showRoom);
     roomName = input.value;
     input.value = "";
 }
 
-form.addEventListener("submit", handleRoomSubmit);
+nickNameForm.addEventListener("submit", handleNicknameSubmit);
 
 socket.on("welcome", (user, newCount) => {
     const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName} (${newCount})`;    
-    addMessage(`${user} arrived`);
+    h3.innerText = `Room #${roomName}    👥 ${newCount}`;    
+    addMessage(`${user} 님이 입장했습니다.`);
 });
 
 socket.on("bye", (left, newCount) => {
     const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName} (${newCount})`;    
-    addMessage(`${left} leftㅠㅠ`);
+    h3.innerText = `Room #${roomName}    👥 ${newCount}`;    
+    addMessage(`${left} 님이 나갔습니다.`);
 });
 
 socket.on("new_message", addMessage);
