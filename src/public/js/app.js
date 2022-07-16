@@ -86,6 +86,8 @@ function handleCameraClick() {
 
 
 async function handleCameraChange(){
+    handleCameraClick();
+    handleMuteClick();
     await getMedia(camerasSelect.value);
     if(myPeerConnection){
         const videoTrack = myStream.getVideoTracks()[0];
