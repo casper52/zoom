@@ -7,6 +7,8 @@ const camerasSelect = document.getElementById("cameras");
 
 const welcome = document.getElementById("welcome");
 const call = document.getElementById("call");
+const writeMsg = document.getElementById("writeMsg");
+const chat = document.getElementById("chat");
 
 call.hidden = true;
 
@@ -16,6 +18,7 @@ let cameraOff = false;
 let roomName;
 let myPeerConnection;
 let myDataChannel;
+let chatMsg;
 
 async function getCameras(){
     try{
@@ -124,13 +127,37 @@ async function handleWelcomeSubmit(event){
     
 }
 
+function addMessage(message){
+    const ul = chat.querySelector("ul");
+    const li = document.createElement("li");
+    li.innerText = message;
+    ul.appendChild(li);
+}
+
+async function handleSendMsg(event){
+    event.preventDefault();
+    const input = writeMsg.querySelector("input");
+    chatMsg = input.value;
+    myDataChannel.send(chatMsg);
+    addMessage(`Me: ${chatMsg}`);
+    input.value = "";
+}
+
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
+
+
+const writeMsgForm = writeMsg.querySelector("form");
+
 
 // Socket Code
 
 socket.on("welcome", async () => {
     myDataChannel = myPeerConnection.createDataChannel("chat");
-    myDataChannel.addEventListener("message", (event) => console.log(event.data));
+    myDataChannel.addEventListener("message", (event) => {
+        addMessage(event.data)
+    });
+    writeMsgForm.addEventListener("submit",handleSendMsg);
+    //myDataChannel.addEventListener("message", handleSendMsg);
     console.log("made data channel");
     const offer = await myPeerConnection.createOffer();
     myPeerConnection.setLocalDescription(offer);
@@ -142,7 +169,10 @@ socket.on("welcome", async () => {
 socket.on("offer", async (offer) => {
     myPeerConnection.addEventListener("datachannel", (event) => {
         myDataChannel = event.channel;
-        myDataChannel.addEventListener("message", (event) => console.log(event.data));
+        myDataChannel.addEventListener("message", (event) =>
+            addMessage(event.data)
+      );
+        writeMsgForm.addEventListener("submit",handleSendMsg);
     });
     console.log("received the offer");
     myPeerConnection.setRemoteDescription(offer);
